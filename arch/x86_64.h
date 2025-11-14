@@ -1,82 +1,80 @@
-#include "common.h"
+#include "../common.h"
 
-#ifdef __linux__
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <asm/prctl.h>
-#endif
+#ifdef __x86_64__
+#define FEATURE(feat, name) [feat]={name,check_##feat}
+#define host_features x86_64_features
 
-void __attribute__((target("avx")))
+static void __attribute__((target("avx")))
 check_avx(void) {
     asm volatile("vaddps %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
 }
 
-void __attribute__((target("f16c")))
+static void __attribute__((target("f16c")))
 check_f16c(void) {
     asm volatile("vcvtph2ps %%xmm0, %%ymm1" ::: "xmm0", "ymm1");
 }
 
-void __attribute__((target("fma")))
+static void __attribute__((target("fma")))
 check_fma(void) {
     asm volatile("vfmadd132ps %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
 }
 
-void __attribute__((target("avx2")))
+static void __attribute__((target("avx2")))
 check_avx2(void) {
     asm volatile("vpaddd %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
 }
 
-void __attribute__((target("bmi2")))
+static void __attribute__((target("bmi2")))
 check_bmi2(void) {
     asm volatile("pext %%rax, %%rbx, %%rcx" ::: "rax", "rbx", "rcx");
 }
 
-void __attribute__((target("avxvnniint8")))
+static void __attribute__((target("avxvnniint8")))
 check_avxvnniint8(void) {
     asm volatile("vpdpbssd %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
 }
 
-void __attribute__((target("avxvnni")))
+static void __attribute__((target("avxvnni")))
 check_avxvnni(void) {
     asm volatile("vpdpwssd %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
 }
 
-void __attribute__((target("evex512,avx512f")))
+static void __attribute__((target("evex512,avx512f")))
 check_avx512f(void) {
     asm volatile("vaddps %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
 }
 
-void __attribute__((target("evex512,avx512vl")))
+static void __attribute__((target("evex512,avx512vl")))
 check_avx512vl(void) {
     asm volatile("vaddps %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
 }
 
-void __attribute__((target("evex512,avx512bw")))
+static void __attribute__((target("evex512,avx512bw")))
 check_avx512bw(void) {
     asm volatile("vpaddw %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
 }
 
-void __attribute__((target("evex512,avx512dq")))
+static void __attribute__((target("evex512,avx512dq")))
 check_avx512dq(void) {
     asm volatile("vpmulld %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
 }
 
-void __attribute__((target("evex512,avx512cd")))
+static void __attribute__((target("evex512,avx512cd")))
 check_avx512cd(void) {
     asm volatile("vpconflictd %%zmm0, %%zmm1" ::: "zmm0", "zmm1");
 }
 
-void __attribute__((target("evex512,avx512vnni")))
+static void __attribute__((target("evex512,avx512vnni")))
 check_avx512vnni(void) {
     asm volatile("vpdpbusd %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
 }
 
-void __attribute__((target("evex512,avx512vbmi")))
+static void __attribute__((target("evex512,avx512vbmi")))
 check_avx512vbmi(void) {
     asm volatile("vpermb %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
 }
 
-void __attribute__((target("evex512,avx512bf16")))
+static void __attribute__((target("evex512,avx512bf16")))
 check_avx512bf16(void) {
     asm volatile("vdpbf16ps %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
 }
@@ -93,8 +91,22 @@ amx_cfg[64] = {
     [50] = 16,
 };
 
-void __attribute__((target("amx-tile")))
+#ifdef __linux__
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <asm/prctl.h>
+#endif
+
+static void
+amx_init(void) {
+#ifdef __linux__
+    syscall(SYS_arch_prctl, ARCH_REQ_XCOMP_PERM, 18);
+#endif
+}
+
+static void __attribute__((target("amx-tile")))
 check_amxtile(void) {
+    amx_init();
     asm volatile(
         "ldtilecfg %0\n\t"
         "tilerelease\n\t"
@@ -102,8 +114,9 @@ check_amxtile(void) {
     );
 }
 
-void __attribute__((target("amx-int8")))
+static void __attribute__((target("amx-int8")))
 check_amxint8(void) {
+    amx_init();
     asm volatile(
         "ldtilecfg %0\n\t"
         "tdpbssd %%tmm0, %%tmm1, %%tmm2\n\t"
@@ -112,8 +125,9 @@ check_amxint8(void) {
     );
 }
 
-void __attribute__((target("amx-bf16")))
+static void __attribute__((target("amx-bf16")))
 check_amxbf16(void) {
+    amx_init();
     asm volatile(
         "ldtilecfg %0\n\t"
         "tdpbf16ps %%tmm0, %%tmm1, %%tmm2\n\t"
@@ -121,6 +135,10 @@ check_amxbf16(void) {
         :: "m"(amx_cfg) : "memory", "tmm0", "tmm1", "tmm2"
     );
 }
+
+#else
+#define FEATURE(feat, name) [feat]={name,NULL}
+#endif
 
 enum {
     avx, f16c, fma, avx2, bmi2,
@@ -131,8 +149,32 @@ enum {
     amxtile, amxint8, amxbf16
 };
 
+static struct feature
+x86_64_list[] = {
+    FEATURE(avx,         "avx"        ),
+    FEATURE(f16c,        "f16c"       ),
+    FEATURE(fma,         "fma"        ),
+    FEATURE(avx2,        "avx2"       ),
+    FEATURE(bmi2,        "bmi2"       ),
+    FEATURE(avxvnni,     "avxvnni"    ),
+    FEATURE(avxvnniint8, "avxvnniint8"),
+    FEATURE(avx512f,     "avx512f"    ),
+    FEATURE(avx512vl,    "avx512vl"   ),
+    FEATURE(avx512bw,    "avx512bw"   ),
+    FEATURE(avx512dq,    "avx512dq"   ),
+    FEATURE(avx512cd,    "avx512cd"   ),
+    FEATURE(avx512vnni,  "avx512vnni" ),
+    FEATURE(avx512vbmi,  "avx512vbmi" ),
+    FEATURE(avx512bf16,  "avx512bf16" ),
+    FEATURE(amxtile,     "amx-tile"   ),
+    FEATURE(amxint8,     "amx-int8"   ),
+    FEATURE(amxbf16,     "amx-bf16"   ),
+};
+
+#undef FEATURE
+
 static void
-reduce(struct feature *feature)
+x86_64_reduce(struct feature *feature)
 {
     if (feature[f16c].set ||
         feature[fma].set  ||
@@ -164,44 +206,9 @@ reduce(struct feature *feature)
         feature[amxtile].dep = 1;
 }
 
-int
-main(int argc, char *argv[])
-{
-#ifdef __linux__
-    syscall(SYS_arch_prctl, ARCH_REQ_XCOMP_PERM, 18);
-#endif
-    struct feature list[] = {
-        [avx        ] = {"avx",         check_avx        },
-        [f16c       ] = {"f16c",        check_f16c       },
-        [fma        ] = {"fma",         check_fma        },
-        [avx2       ] = {"avx2",        check_avx2       },
-        [bmi2       ] = {"bmi2",        check_bmi2       },
-        [avxvnni    ] = {"avxvnni",     check_avxvnni    },
-        [avxvnniint8] = {"avxvnniint8", check_avxvnniint8},
-        [avx512f    ] = {"avx512f",     check_avx512f    },
-        [avx512vl   ] = {"avx512vl",    check_avx512vl   },
-        [avx512bw   ] = {"avx512bw",    check_avx512bw   },
-        [avx512dq   ] = {"avx512dq",    check_avx512dq   },
-        [avx512cd   ] = {"avx512cd",    check_avx512cd   },
-        [avx512vnni ] = {"avx512vnni",  check_avx512vnni },
-        [avx512vbmi ] = {"avx512vbmi",  check_avx512vbmi },
-        [avx512bf16 ] = {"avx512bf16",  check_avx512bf16 },
-        [amxtile    ] = {"amx-tile",    check_amxtile    },
-        [amxint8    ] = {"amx-int8",    check_amxint8    },
-        [amxbf16    ] = {"amx-bf16",    check_amxbf16    },
-    };
-    struct features features = {
-        .list = list,
-        .count = sizeof(list) / sizeof(list[0]),
-        .reduce = reduce
-    };
-    if (argc <= 1) {
-        detect(features);
-        return encode(features);
-    }
-    for (int i = 1; i < argc; i++)
-        helper(features, argv[i]);
-
-    show(features);
-    return 0;
-}
+static struct features
+x86_64_features = {
+    .list   = x86_64_list,
+    .count  = sizeof(x86_64_list) / sizeof(x86_64_list[0]),
+    .reduce = x86_64_reduce,
+};

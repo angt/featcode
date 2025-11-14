@@ -1,3 +1,5 @@
+#pragma once
+
 #include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
@@ -56,7 +58,7 @@ detect(struct features features)
     sigaction(SIGILL, &sa, NULL);
 
     for (size_t i = 0; i < features.count; i++) {
-        if (!sigsetjmp(jmp, 1)) {
+        if (features.list[i].detect && !sigsetjmp(jmp, 1)) {
             features.list[i].detect();
             features.list[i].set = 1;
         }
@@ -98,16 +100,4 @@ encode(struct features features)
 
     printf("\n");
     return 0;
-}
-
-static void
-helper(struct features features, const char *s)
-{
-    if (s[0] == '+') {
-        set(features, s + 1);
-    } else if (!strcmp(s, ".")) {
-        detect(features);
-    } else {
-        decode(features, s);
-    }
 }
