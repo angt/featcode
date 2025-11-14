@@ -38,11 +38,11 @@ show(struct features features)
 }
 
 static int
-set(struct features features, const char *name)
+set(struct features features, const char *name, int value)
 {
     for (size_t i = 0; i < features.count; i++) {
         if (!strcmp(features.list[i].name, name)) {
-            features.list[i].set = 1;
+            features.list[i].set = value;
             return 0;
         }
     }

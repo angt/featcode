@@ -4,11 +4,14 @@
 #include "arch/aarch64.h"
 #include "arch/x86_64.h"
 
+static int modified = 0;
+
 static void
 helper(struct features features, const char *s)
 {
-    if (s[0] == '+') {
-        set(features, s + 1);
+    if (s[0] == '+' || s[0] == '-') {
+        modified = 1;
+        set(features, s + 1, s[0] == '+');
     } else if (!strcmp(s, ".")) {
         detect(features);
     } else {
@@ -20,12 +23,7 @@ int
 main(int argc, char *argv[])
 {
     struct features features = host_features;
-
-    if (argc <= 1) {
-        detect(host_features);
-        return encode(host_features);
-    }
-    const char *arch = getenv("ARCH");
+    const char *arch = getenv("FEATCODE_ARCH");
 
     if (arch) {
         if (!strcmp(arch, "aarch64")) {
@@ -36,9 +34,17 @@ main(int argc, char *argv[])
             return 1;
         }
     }
+    if (argc <= 1) {
+        modified = 1;
+        helper(features, ".");
+    }
     for (int i = 1; i < argc; i++)
         helper(features, argv[i]);
 
-    show(features);
+    if (modified) {
+        encode(features);
+    } else {
+        show(features);
+    }
     return 0;
 }

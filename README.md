@@ -26,6 +26,4 @@ Show target's features for real, no joking
 ###  Use '+' to add a specific feature
 
     $ ./aarch64-macos-featcode +sme .
-    dotprod
-    i8mm
-    sme
+    qm
