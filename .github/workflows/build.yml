@@ -20,7 +20,7 @@ jobs:
 
     - name: Build
       id: build
-      run: zig build
+      run: zig build -Dall
 
     - name: Release
       if: startsWith(github.ref, 'refs/tags/')

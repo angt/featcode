@@ -1,21 +1,24 @@
 const std = @import("std");
 
-const targets: []const std.Target.Query = &.{
-    .{ .cpu_arch = .aarch64, .os_tag = .macos },
-    .{ .cpu_arch = .x86_64, .os_tag = .macos },
-    .{ .cpu_arch = .aarch64, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .musl },
-};
-
 pub fn build(b: *std.Build) void {
+    const cross = b.option(bool, "all", "Build for all supported targets") orelse false;
+
+    const targets: []const std.Target.Query = if (cross) &.{
+        .{ .cpu_arch = .aarch64, .os_tag = .macos },
+        .{ .cpu_arch = .x86_64, .os_tag = .macos },
+        .{ .cpu_arch = .aarch64, .os_tag = .linux, .abi = .musl },
+        .{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .musl },
+    } else &.{
+        .{},
+    };
     for (targets) |target| {
-        const arch_name = @tagName(target.cpu_arch.?);
-        const os_name = @tagName(target.os_tag.?);
+        const name = if (target.cpu_arch) |arch| b.fmt("{s}-{s}-featcode", .{
+            @tagName(arch),
+            @tagName(target.os_tag.?),
+        }) else "featcode";
+
         const exe = b.addExecutable(.{
-            .name = b.fmt("{s}-{s}-featcode", .{
-                arch_name,
-                os_name,
-            }),
+            .name = name,
             .root_module = b.createModule(.{
                 .target = b.resolveTargetQuery(target),
                 .optimize = .ReleaseSmall,
