@@ -1,1 +1,2 @@
-*-featcode
+.zig-cache
+zig-out

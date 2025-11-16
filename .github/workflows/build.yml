@@ -20,13 +20,12 @@ jobs:
 
     - name: Build
       id: build
-      run: |
-        make
+      run: zig build
 
     - name: Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
-        files: ./*-featcode
+        files: ./zig-out/bin/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
