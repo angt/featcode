@@ -142,10 +142,9 @@ check_amxbf16(void) {
 
 enum {
     avx, f16c, fma, avx2, bmi2,
-    avx512f, avx512vl, avx512bw,
-    avx512cd, avx512dq,
+    avxvnni, avxvnniint8,
+    avx512f, avx512vl, avx512bw, avx512cd, avx512dq,
     avx512vnni, avx512vbmi, avx512bf16,
-    avxvnniint8, avxvnni,
     amxtile, amxint8, amxbf16
 };
 
@@ -173,42 +172,31 @@ x86_64_list[] = {
 
 #undef FEATURE
 
-static void
-x86_64_reduce(struct feature *feature)
-{
-    if (feature[f16c].set ||
-        feature[fma].set  ||
-        feature[avx2].set)
-        feature[avx].dep = 1;
-
-    if (feature[avx512f].set) {
-        feature[avx2].dep = 1;
-        feature[f16c].dep = 1;
-        feature[fma].dep = 1;
-    }
-    if (feature[avxvnni].set ||
-        feature[avxvnniint8].set)
-        feature[avx2].dep = 1;
-
-    if (feature[avx512vl].set ||
-        feature[avx512bw].set ||
-        feature[avx512dq].set ||
-        feature[avx512cd].set ||
-        feature[avx512vnni].set)
-        feature[avx512f].dep = 1;
-
-    if (feature[avx512vbmi].set ||
-        feature[avx512bf16].set)
-        feature[avx512bw].dep = 1;
-
-    if (feature[amxint8].set ||
-        feature[amxbf16].set)
-        feature[amxtile].dep = 1;
-}
+static struct dependency
+x86_64_deps_list[] = {
+    {f16c,        avx     },
+    {fma,         avx     },
+    {avx2,        avx     },
+    {avx512f,     avx2    },
+    {avx512f,     f16c    },
+    {avx512f,     fma     },
+    {avxvnni,     avx2    },
+    {avxvnniint8, avx2    },
+    {avx512vl,    avx512f },
+    {avx512bw,    avx512f },
+    {avx512dq,    avx512f },
+    {avx512cd,    avx512f },
+    {avx512vnni,  avx512f },
+    {avx512vbmi,  avx512bw},
+    {avx512bf16,  avx512bw},
+    {amxint8,     amxtile },
+    {amxbf16,     amxtile },
+};
 
 static struct features
 x86_64_features = {
-    .list   = x86_64_list,
-    .count  = sizeof(x86_64_list) / sizeof(x86_64_list[0]),
-    .reduce = x86_64_reduce,
+    .list       = x86_64_list,
+    .count      = COUNT(x86_64_list),
+    .deps.list  = x86_64_deps_list,
+    .deps.count = COUNT(x86_64_deps_list),
 };

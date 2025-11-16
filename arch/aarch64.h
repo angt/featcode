@@ -56,20 +56,17 @@ aarch64_list[] = {
 
 #undef FEATURE
 
-static void
-aarch64_reduce(struct feature *feature)
-{
-    if (feature[sve].set ||
-        feature[sme].set)
-        feature[fp16].dep = 1;
-
-    if (feature[sve2].set)
-        feature[sve].dep = 1;
-}
+static struct dependency
+aarch64_deps_list[] = {
+    {sve, fp16},
+    {sme, fp16},
+    {sve2, sve},
+};
 
 static struct features
 aarch64_features = {
     .list   = aarch64_list,
-    .count  = sizeof(aarch64_list) / sizeof(aarch64_list[0]),
-    .reduce = aarch64_reduce
+    .count  = COUNT(aarch64_list),
+    .deps.list = aarch64_deps_list,
+    .deps.count = COUNT(aarch64_deps_list),
 };

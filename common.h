@@ -5,16 +5,26 @@
 #include <stdio.h>
 #include <string.h>
 
+#define COUNT(x) (sizeof(x) / sizeof((x)[0]))
+
 struct feature {
     const char *name;
     void (*detect)(void);
     int set, dep;
 };
 
+struct dependency {
+    int set;
+    int dep;
+};
+
 struct features {
     struct feature *list;
     size_t count;
-    void (*reduce)(struct feature *);
+    struct {
+        struct dependency *list;
+        size_t count;
+    } deps;
 };
 
 static sigjmp_buf jmp;
@@ -27,9 +37,19 @@ handler(int sig)
 }
 
 static void
+reduce(struct features features)
+{
+    for (size_t i = 0; i < features.deps.count; i++) {
+        struct dependency d = features.deps.list[i];
+        if (features.list[d.set].set)
+            features.list[d.dep].dep = 1;
+    }
+}
+
+static void
 show(struct features features)
 {
-    features.reduce(features.list);
+    reduce(features);
 
     for (size_t i = 0; i < features.count; i++) {
         if (features.list[i].set && !features.list[i].dep)
@@ -84,7 +104,7 @@ encode(struct features features)
 {
     int h = 0;
 
-    features.reduce(features.list);
+    reduce(features);
 
     for (size_t i = 0; i < features.count; i++) {
         if (features.list[i].set && !features.list[i].dep)
