@@ -46,7 +46,7 @@ check_avx512f(void) {
 
 static void __attribute__((target("evex512,avx512vl")))
 check_avx512vl(void) {
-    asm volatile("vaddps %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
+    asm volatile("vpternlogd $0xFF, %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
 }
 
 static void __attribute__((target("evex512,avx512bw")))
