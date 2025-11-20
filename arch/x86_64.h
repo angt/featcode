@@ -56,7 +56,7 @@ check_avx512bw(void) {
 
 static void __attribute__((target("evex512,avx512dq")))
 check_avx512dq(void) {
-    asm volatile("vpmulld %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
+    asm volatile("vpmullq %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
 }
 
 static void __attribute__((target("evex512,avx512cd")))
