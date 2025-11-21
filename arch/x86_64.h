@@ -29,14 +29,14 @@ check_bmi2(void) {
     asm volatile("pext %%rax, %%rbx, %%rcx" ::: "rax", "rbx", "rcx");
 }
 
+static void __attribute__((target("avxvnni")))
+check_avxvnni(void) { // vpdpwssd
+    asm volatile(".byte 0xc4, 0xe2, 0x75, 0x52, 0xd0" ::: "ymm0", "ymm1", "ymm2");
+}
+
 static void __attribute__((target("avxvnniint8")))
 check_avxvnniint8(void) {
     asm volatile("vpdpbssd %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
-}
-
-static void __attribute__((target("avxvnni")))
-check_avxvnni(void) {
-    asm volatile("vpdpwssd %%ymm0, %%ymm1, %%ymm2" ::: "ymm0", "ymm1", "ymm2");
 }
 
 static void __attribute__((target("evex512,avx512f")))
