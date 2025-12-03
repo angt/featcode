@@ -5,6 +5,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include "sys/win32.h"
+#else
+#include "sys/posix.h"
+#endif
+
 #define COUNT(x) (sizeof(x) / sizeof((x)[0]))
 
 struct feature {
@@ -26,15 +32,6 @@ struct features {
         size_t count;
     } deps;
 };
-
-static sigjmp_buf jmp;
-
-static void
-handler(int sig)
-{
-    (void)sig;
-    siglongjmp(jmp, 1);
-}
 
 static void
 reduce(struct features features)
@@ -72,17 +69,15 @@ set(struct features features, const char *name, int value)
 static void
 detect(struct features features)
 {
-    struct sigaction sa = {
-        .sa_handler = handler
-    };
-    sigaction(SIGILL, &sa, NULL);
+    sys_init();
 
     for (size_t i = 0; i < features.count; i++) {
-        if (features.list[i].detect && !sigsetjmp(jmp, 1)) {
+        if (features.list[i].detect && !sys_setjmp()) {
             features.list[i].detect();
             features.list[i].set = 1;
         }
     }
+    sys_exit();
 }
 
 static void
