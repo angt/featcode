@@ -92,15 +92,25 @@ amx_cfg[64] = {
 };
 
 #ifdef __linux__
+
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <asm/prctl.h>
+
+#ifndef ARCH_REQ_XCOMP_PERM
+#define ARCH_REQ_XCOMP_PERM 0x1023
+#endif
+
+#ifndef XFEATURE_XTILEDATA
+#define XFEATURE_XTILEDATA 18
+#endif
+
 #endif
 
 static void
 amx_init(void) {
 #ifdef __linux__
-    syscall(SYS_arch_prctl, ARCH_REQ_XCOMP_PERM, 18);
+    syscall(SYS_arch_prctl, ARCH_REQ_XCOMP_PERM, XFEATURE_XTILEDATA);
 #endif
 }
 
@@ -109,8 +119,9 @@ check_amxtile(void) {
     amx_init();
     asm volatile(
         "ldtilecfg %0\n\t"
+        "tilezero %%tmm0\n\t"
         "tilerelease\n\t"
-        :: "m"(amx_cfg) : "memory", "tmm2"
+        :: "m"(amx_cfg) : "memory", "tmm0"
     );
 }
 
