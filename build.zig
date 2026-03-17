@@ -26,14 +26,14 @@ pub fn build(b: *std.Build) void {
             .root_module = b.createModule(.{
                 .target = b.resolveTargetQuery(target),
                 .optimize = .ReleaseSmall,
+                .link_libc = true,
             }),
         });
-        exe.addCSourceFiles(.{
+        exe.root_module.addCSourceFiles(.{
             .files = &.{
                 "featcode.c",
             },
         });
-        exe.linkLibC();
         b.installArtifact(exe);
     }
 }
