@@ -79,6 +79,11 @@ check_avx512bf16(void) {
     asm volatile("vdpbf16ps %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
 }
 
+static void __attribute__((target("evex512,avx512fp16")))
+check_avx512fp16(void) {
+    asm volatile("vaddph %%zmm0, %%zmm1, %%zmm2" ::: "zmm0", "zmm1", "zmm2");
+}
+
 static const unsigned char
 __attribute__((aligned(64)))
 amx_cfg[64] = {
@@ -155,7 +160,7 @@ enum {
     avx, f16c, fma, avx2, bmi2,
     avxvnni, avxvnniint8,
     avx512f, avx512vl, avx512bw, avx512cd, avx512dq,
-    avx512vnni, avx512vbmi, avx512bf16,
+    avx512vnni, avx512vbmi, avx512bf16, avx512fp16,
     amxtile, amxint8, amxbf16
 };
 
@@ -176,6 +181,7 @@ x86_64_list[] = {
     FEATURE(avx512vnni,  "avx512vnni" ),
     FEATURE(avx512vbmi,  "avx512vbmi" ),
     FEATURE(avx512bf16,  "avx512bf16" ),
+    FEATURE(avx512fp16,  "avx512fp16" ),
     FEATURE(amxtile,     "amx-tile"   ),
     FEATURE(amxint8,     "amx-int8"   ),
     FEATURE(amxbf16,     "amx-bf16"   ),
@@ -200,6 +206,7 @@ x86_64_deps_list[] = {
     {avx512vnni,  avx512f },
     {avx512vbmi,  avx512bw},
     {avx512bf16,  avx512bw},
+    {avx512fp16,  avx512bw},
     {amxint8,     amxtile },
     {amxbf16,     amxtile },
 };
